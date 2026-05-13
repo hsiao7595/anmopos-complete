@@ -1,0 +1,9 @@
+{
+  "/staff/page": "app/staff/page.js",
+  "/api/guest-entries/route": "app/api/guest-entries/route.js",
+  "/api/stores/route": "app/api/stores/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/api/rooms/route": "app/api/rooms/route.js",
+  "/api/staff/route": "app/api/staff/route.js",
+  "/api/sessions/route": "app/api/sessions/route.js"
+}

@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>按摩店 POS 系統</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <section id="loginScreen" class="login-screen">
+      <div class="login-card">
+        <div class="brand login-brand">
+          <div>
+            <h1>御手足悦 × 足不老</h1>
+            <p>雙店營運數據管理系統 DEMO</p>
+          </div>
+        </div>
+        <form id="loginForm" class="login-form">
+          <label>帳號
+            <select id="loginAccount" name="account" size="8"></select>
+          </label>
+          <label>密碼
+            <input name="password" type="password" value="demo123" />
+          </label>
+          <button type="submit">登入系統</button>
+          <p id="loginError" class="login-error"></p>
+        </form>
+        <div class="demo-accounts">
+          <p>所有帳號預設密碼：<strong>demo123</strong></p>
+        </div>
+
+        <div class="login-divider"><span>師傅業績查詢</span></div>
+        <form id="staffLoginForm" class="login-form">
+          <label>員工編號
+            <input name="staffNo" type="text" placeholder="例如 YS001" autocomplete="off" />
+          </label>
+          <label>密碼
+            <input name="staffPassword" type="password" placeholder="師傅自設密碼" />
+          </label>
+          <button type="submit" class="secondary">師傅登入</button>
+          <p id="staffLoginError" class="login-error"></p>
+        </form>
+      </div>
+    </section>
+
+    <main class="app-shell hidden">
+      <aside class="sidebar">
+        <div class="brand">
+          <div>
+            <h1>御手足悦 × 足不老</h1>
+            <p>雙店營運數據管理系統</p>
+          </div>
+        </div>
+        <nav>
+          <button class="nav-item active" data-view="owner">負責人總覽</button>
+          <button class="nav-item" data-view="manager">各班進客分析</button>
+          <button class="nav-item" data-view="live-orders">📍 現場實時訂單</button>
+          <button class="nav-item" data-view="frontdesk">櫃台進場</button>
+          <button class="nav-item" data-view="staffacc">師傅帳號管理</button>
+          <button class="nav-item" data-view="users">管理員設定</button>
+          <button class="nav-item" data-view="staffview">我的業績</button>
+        </nav>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div class="store-switch">
+            <span>目前範圍</span>
+            <strong id="scopeLabel">雙店總覽</strong>
+            <select id="storeFilter" class="store-selector" hidden></select>
+          </div>
+          <div class="filters">
+            <label>日期<input id="systemDate" type="date" value="2026-04-23" /></label>
+            <label>年份<select id="yearFilter"></select></label>
+            <label>月份<select id="monthFilter"></select></label>
+            <button id="logoutButton" class="secondary user-menu" type="button">登出</button>
+          </div>
+        </header>
+
+        <section id="ownerView" class="view active-view">
+          <div class="page-title">
+            <p id="roleLabel">Owner Dashboard</p>
+            <h2 id="pageTitle">負責人總覽</h2>
+            <span>以下為雙店今日與本月營運摘要。</span>
+          </div>
+          <div id="ownerCards" class="metric-grid"></div>
+
+          <div id="ownerStoreCards" class="owner-store-grid"></div>
+
+          <div class="owner-dashboard-grid">
+            <section class="panel wide-panel">
+              <div class="panel-head"><h3>每月營收趨勢</h3></div>
+              <div id="ownerMonthlyRevenueTrend" class="line-chart"></div>
+            </section>
+            <section class="panel wide-panel">
+              <div class="panel-head"><h3>每日 / 月營收對比</h3></div>
+              <div id="ownerRevenueCompare" class="owner-bars"></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head"><h3>兩店營運數據總表（單位：NTD・人・%）</h3></div>
+            <div id="ownerOpsTable" class="table-wrap"></div>
+          </section>
+        </section>
+
+        <section id="managerView" class="view">
+          <div class="page-title">
+            <p id="managerModeLabel">Daily Input</p>
+            <h2 id="managerPageTitle">每日資料輸入</h2>
+            <span id="managerPageDesc">輸入每日營運數據，系統將自動計算並產出分析結果。</span>
+          </div>
+
+          <!-- 標籤頁導航 -->
+          <div class="manager-tabs">
+            <button class="tab-btn active" data-tab="daily-input">📝 每日輸入</button>
+            <button class="tab-btn" data-tab="service-analysis">📊 項目分析</button>
+          </div>
+
+          <!-- 每日輸入標籤頁 -->
+          <div id="daily-input-tab" class="tab-content active">
+          <div class="daily-layout">
+            <aside id="managerSummary" class="summary-stack"></aside>
+
+            <section class="panel input-panel">
+              <div class="panel-head">
+                <div>
+                  <h3>基本資料</h3>
+                  <p class="muted">標示欄位為必填。</p>
+                </div>
+              </div>
+              <form id="managerForm" class="manager-form">
+                <label class="wide">日期 *<input name="date" type="date" required /></label>
+                <label>早班進客數 *<input name="morning" type="number" min="0" value="0" /></label>
+                <label>中班進客數 *<input name="afternoon" type="number" min="0" value="0" /></label>
+                <label>晚班進客數 *<input name="evening" type="number" min="0" value="0" /></label>
+                <label>上班師傅數 *<input name="masters" type="number" min="0" value="0" /></label>
+                <label>空班師傅數 *<input name="idle" type="number" min="0" value="0" /></label>
+                <label>流失數 *<input name="lost" type="number" min="0" value="0" /></label>
+                <label class="wide">備註<textarea name="note" maxlength="200" placeholder="可輸入當日特殊狀況或備註說明"></textarea></label>
+                <button id="clearManagerForm" type="button" class="secondary">清除重填</button>
+                <button type="submit">儲存資料</button>
+                <button type="submit" class="dark">更新資料</button>
+              </form>
+            </section>
+
+          </div>
+
+          <div class="manager-chart-grid">
+            <section class="panel">
+              <div class="panel-head"><h3>2026年 每月進客趨勢</h3></div>
+              <div id="managerMonthlyTrend" class="line-chart"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-head"><h3>時段進客數比較（本月累積）</h3></div>
+              <div id="managerShiftCompare" class="bar-chart"></div>
+            </section>
+            <section class="panel wide-panel">
+              <div class="panel-head"><h3>本月進客趨勢（每日進客數）</h3></div>
+              <div id="managerDailyTrend" class="line-chart"></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3 id="managerReportTitle">各班進客分析表</h3>
+                <p class="muted">表格可直接修改，每格離開後會自動儲存。</p>
+              </div>
+              <div class="report-actions">
+                <button id="exportManagerExcel" class="secondary" type="button">匯出 Excel</button>
+                <button id="exportManagerPdf" class="secondary" type="button">匯出 PDF</button>
+                <button id="printManagerReport" class="secondary" type="button">列印報表</button>
+              </div>
+            </div>
+            <div class="report-layout">
+              <div id="managerReportTable" class="manager-report"></div>
+            </div>
+          </section>
+          </div>
+          <!-- 結束每日輸入標籤頁 -->
+
+
+          <!-- 項目分析標籤頁 -->
+          <div id="service-analysis-tab" class="tab-content">
+            <section class="panel">
+              <div class="panel-head">
+                <h3>📊 服務項目分析</h3>
+                <p class="muted">查看各服務項目的客戶分布和營收情況。</p>
+              </div>
+              <div id="serviceAnalysisContainer">
+                <div class="analysis-grid">
+                  <div class="analysis-card">
+                    <div class="analysis-value" id="totalCustomers">0</div>
+                    <div class="analysis-label">總客戶人數</div>
+                  </div>
+                  <div class="analysis-card">
+                    <div class="analysis-value" id="totalServices">0</div>
+                    <div class="analysis-label">項目種類</div>
+                  </div>
+                  <div class="analysis-card">
+                    <div class="analysis-value" id="totalAmount">$0</div>
+                    <div class="analysis-label">總營收</div>
+                  </div>
+                </div>
+                <div style="margin-top: 20px; padding-bottom: 20px;">
+                  <canvas id="serviceChart" style="max-width: 600px; margin: 0 auto;"></canvas>
+                </div>
+                <div id="serviceAnalysisTable" class="analysis-table"></div>
+              </div>
+            </section>
+          </div>
+          <!-- 結束項目分析標籤頁 -->
+        </section>
+
+        <section id="live-ordersView" class="view">
+          <div id="liveOrdersContent" style="padding: 20px;"></div>
+        </section>
+
+        <section id="frontdeskView" class="view">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>顧客用 POS 串聯方式</h3>
+                <p class="muted">正式版建議由顧客用 POS 寫入共同 API；DEMO 可從同瀏覽器 localStorage 同步。</p>
+              </div>
+              <button id="syncPosOrders" class="secondary" type="button">同步顧客用 POS</button>
+            </div>
+            <div class="integration-note">
+              <p><strong>正式版（已啟用）：</strong>顧客用 POS 結帳後自動寫入後台 API（localhost:3000），進入此頁面時自動同步。</p>
+              <p><strong>DEMO 降級：</strong>後台未連線時，按鈕改從同瀏覽器 localStorage 讀取。</p>
+            </div>
+          </section>
+
+          <div id="frontdeskSummary" class="metric-grid frontdesk-summary"></div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>快速補登進場紀錄</h3>
+                <p class="muted">可在顧客用 POS 尚未同步時，先補登現場進場與金額。</p>
+              </div>
+            </div>
+            <div class="service-workbench">
+              <section>
+                <h4>常用項目</h4>
+                <div id="serviceButtons" class="service-buttons"></div>
+              </section>
+              <section>
+                <h4>套餐 / 組合</h4>
+                <div id="comboButtons" class="service-buttons"></div>
+              </section>
+            </div>
+            <form id="guestForm" class="pos-form">
+              <label>店別
+                <select id="guestStore" name="storeId"></select>
+              </label>
+              <label>日期
+                <input name="date" type="date" required />
+              </label>
+              <label>進場時間
+                <input name="arrivalTime" type="time" required />
+              </label>
+              <label>人數
+                <input name="people" type="number" min="1" value="1" />
+              </label>
+              <label>分鐘
+                <input name="minutes" type="number" min="0" value="0" />
+              </label>
+              <label class="wide">服務項目
+                <input name="serviceType" type="text" placeholder="可點選上方項目或自行輸入" required />
+              </label>
+              <label>師傅
+                <input name="master" type="text" placeholder="例如 68 / 37" />
+              </label>
+              <label>包廂
+                <input name="room" type="text" />
+              </label>
+              <label>金額
+                <input name="amount" type="number" min="0" value="0" />
+              </label>
+              <label>結束時間
+                <input name="checkoutTime" type="time" />
+              </label>
+              <label class="wide">備註
+                <textarea name="note" maxlength="200" placeholder="特殊狀況、來源或補登原因"></textarea>
+              </label>
+              <button id="clearGuestForm" type="button" class="secondary">清除</button>
+              <button type="submit">新增進場紀錄</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>今日進場紀錄</h3>
+              <button id="exportGuestCsv" class="secondary">匯出 CSV</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>時間</th><th>店別</th><th>項目</th><th>人數</th><th>分鐘</th><th>師傅</th><th>包廂</th><th>金額</th><th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="guestRows"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>本月消費明細</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th><th>時間</th><th>店別</th><th>項目</th><th>人數</th><th>分鐘</th><th>師傅</th><th>包廂</th><th>結束</th><th>金額</th><th>備註</th>
+                  </tr>
+                </thead>
+                <tbody id="allGuestRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="staffmgmtView" class="view">
+          <div class="page-title">
+            <p>Staff Management</p>
+            <h2>師傅管理</h2>
+            <span>新增師傅帳號，讓師傅可用員工編號查看自己的業績。姓名需與現場 POS 一致。</span>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>師傅帳號列表</h3>
+              <p class="muted" style="font-size:13px">點選「調整抽成」設定特殊抽成規則</p>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>員工編號</th><th>性別</th><th>姓名</th><th>門店</th>
+                    <th>抽成</th><th>備註</th><th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="staffmgmtRows"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 抽成調整面板 -->
+          <section id="commissionEditorPanel" class="panel commission-editor-panel" hidden>
+            <div class="panel-head">
+              <div>
+                <h3>抽成調整：<span id="commissionEditorName"></span></h3>
+                <p class="muted">正常依服務類型自動判斷（修腳掏耳7抽，其他6抽），有需要才新增例外</p>
+              </div>
+              <button id="closeCommissionEditor" class="secondary" type="button">關閉</button>
+            </div>
+
+            <!-- 快速套用 -->
+            <div style="padding:16px 20px 0">
+              <p style="font-size:13px;font-weight:700;color:#555;margin-bottom:10px">快速套用</p>
+              <div class="commission-presets">
+                <button class="commission-preset" data-rate="50" data-type="period"
+                  title="套用至當期15天（1-15日 或 16-末日）">
+                  5抽<small>老點不足・超休<br>當期15天</small>
+                </button>
+                <button class="commission-preset commission-preset--danger" data-rate="30" data-type="day"
+                  title="僅套用今天">
+                  3抽<small>客訴停牌<br>當天</small>
+                </button>
+              </div>
+            </div>
+
+            <!-- 自訂新增 -->
+            <form id="commissionEditorForm" class="user-form" style="padding:16px 20px">
+              <label>抽成 %
+                <input id="commissionRateInput" name="rate" type="number" min="0" max="100" step="1" placeholder="如 50 或 30" required />
+              </label>
+              <label>開始日期
+                <input id="commissionStartDate" name="startDate" type="date" required />
+              </label>
+              <label>結束日期
+                <input id="commissionEndDate" name="endDate" type="date" required />
+              </label>
+              <label>備註
+                <input id="commissionNoteInput" name="note" type="text" placeholder="如：老點數不足、客訴停牌" />
+              </label>
+              <button type="submit">新增例外記錄</button>
+            </form>
+
+            <!-- 現有覆蓋記錄 -->
+            <div style="padding:0 20px 20px">
+              <p style="font-size:13px;font-weight:700;color:#555;margin-bottom:8px">目前例外記錄</p>
+              <div id="commissionOverridesList"></div>
+            </div>
+          </section>
+
+          <!-- 薪資試算總表 -->
+          <section class="panel">
+            <div class="panel-head">
+              <h3>本月薪資試算</h3>
+              <span class="muted" id="payrollPeriodLabel"></span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>姓名</th><th>門店</th>
+                    <th>當月業績</th><th>抽成</th>
+                    <th>預估薪資</th><th>備註</th>
+                  </tr>
+                </thead>
+                <tbody id="payrollRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- ── 師傅帳號管理 ── -->
+        <section id="staffaccView" class="view">
+          <div class="page-title">
+            <p>Staff Accounts Management</p>
+            <h2>師傅帳號管理</h2>
+            <span>建立帳號、管理時段與聯絡方式，查看業績與抽成。</span>
+          </div>
+
+          <!-- 管理員/負責人的門店篩選 -->
+          <section id="storeFilterPanel" class="panel" hidden style="margin-bottom:16px">
+            <div style="display:flex;gap:16px;align-items:center;padding:12px 20px">
+              <label style="display:flex;gap:8px;align-items:center">
+                <span style="font-weight:600">檢視門店：</span>
+                <select id="staffaccStoreFilter" style="padding:6px 10px;border:1px solid #ddd;border-radius:4px">
+                  <option value="all">所有店家</option>
+                  <option value="store-1">足不老</option>
+                  <option value="store-2">御手足悦</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>新增師傅帳號</h3>
+              </div>
+              <button id="exportStaffBtn" type="button" class="secondary">↓ 導出名單備份</button>
+            </div>
+            <form id="staffaccAddForm" class="user-form">
+              <label>員工編號 *
+                <input name="staffNo" type="text" placeholder="ZBL68 或 YS68" required />
+              </label>
+              <label>師傅姓名 *
+                <input name="name" type="text" placeholder="需與 POS 師傅名稱完全一致" required />
+              </label>
+              <label id="staffaccStoreWrap">門店
+                <select name="storeId" id="staffaccStore"></select>
+              </label>
+              <label>上班時段
+                <select name="shift">
+                  <option value="">未設定</option>
+                  <option value="早班">早班</option>
+                  <option value="中班">中班</option>
+                  <option value="晚班">晚班</option>
+                  <option value="全天">全天</option>
+                  <option value="彈性">彈性</option>
+                </select>
+              </label>
+              <label>電話
+                <input name="phone" type="tel" placeholder="選填" />
+              </label>
+              <label class="wide">備註
+                <input name="note" type="text" placeholder="選填" />
+              </label>
+              <label>初始密碼 *
+                <input name="password" type="text" placeholder="師傅登入密碼" required />
+              </label>
+              <button type="submit">新增師傅帳號</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3 id="staffaccPanelTitle">師傅帳號列表</h3>
+              <div style="display:flex;gap:8px">
+                <input id="staffaccSearch" type="search" placeholder="搜尋姓名或編號…"
+                  style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;font-size:13px;width:200px" />
+                <button id="staffaccToggleView" class="secondary" type="button" style="display:none">切換為固定位置表</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:60px">編號</th>
+                    <th style="width:40px">性別</th>
+                    <th>姓名</th>
+                    <th>門店</th>
+                    <th>上班時段</th>
+                    <th>電話</th>
+                    <th>備註</th>
+                    <th style="width:180px">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="staffaccRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- ── 師傅詳細頁面 ── -->
+        <section id="staffDetailView" class="view" hidden>
+          <div class="page-title">
+            <p>Staff Details</p>
+            <h2 id="detailPageTitle">師傅詳細資訊</h2>
+            <button id="backToStaffList" class="secondary" type="button" style="float:right;margin-top:-40px">← 返回列表</button>
+          </div>
+
+          <!-- 師傅基本資訊 -->
+          <section class="panel">
+            <div class="panel-head">
+              <h3>基本資訊</h3>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;padding:16px 20px">
+              <div>
+                <div style="font-size:12px;color:#666;margin-bottom:4px">員工編號</div>
+                <div style="font-size:16px;font-weight:bold" id="detailStaffNo">—</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#666;margin-bottom:4px">姓名</div>
+                <div style="font-size:16px;font-weight:bold" id="detailStaffName">—</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#666;margin-bottom:4px">門店</div>
+                <div style="font-size:16px;font-weight:bold" id="detailStaffStore">—</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#666;margin-bottom:4px">上班時段</div>
+                <div style="font-size:16px;font-weight:bold" id="detailStaffShift">—</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#666;margin-bottom:4px">電話</div>
+                <div style="font-size:16px;font-weight:bold" id="detailStaffPhone">—</div>
+              </div>
+              <div>
+                <div style="font-size:12px;color:#666;margin-bottom:4px">備註</div>
+                <div style="font-size:14px" id="detailStaffNote">—</div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 當月業績總覽 -->
+          <section class="panel">
+            <div class="panel-head">
+              <h3>當月業績總覽</h3>
+            </div>
+            <div id="detailMetrics" style="display:grid;grid-template-columns:repeat(4, 1fr);gap:16px;padding:16px 20px"></div>
+          </section>
+
+          <!-- 快速操作 -->
+          <section class="panel">
+            <div class="panel-head">
+              <h3>快速操作</h3>
+            </div>
+            <div style="display:flex;gap:8px;padding:16px 20px">
+              <button id="detailEditBtn" class="secondary" type="button">編輯基本資訊</button>
+              <button id="detailCommissionBtn" class="secondary" type="button">調整抽成</button>
+            </div>
+          </section>
+
+          <!-- 當月進場紀錄 -->
+          <section class="panel">
+            <div class="panel-head">
+              <h3>當月進場紀錄</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th><th>進場時間</th><th>服務項目</th><th>人數</th><th>分鐘</th><th>金額</th><th>抽成試算</th>
+                  </tr>
+                </thead>
+                <tbody id="detailRecords"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="staffviewView" class="view">
+          <div class="page-title">
+            <p>Staff Performance</p>
+            <h2 id="staffViewTitle">我的業績</h2>
+            <span id="staffViewSubtitle">查看本月服務紀錄與累積金額</span>
+          </div>
+
+          <div id="staffSummary" class="metric-grid staff-summary"></div>
+          <div id="staffSalaryCard" class="salary-card" hidden></div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>服務明細</h3>
+              <div class="filter-row">
+                <select id="staffYearFilter"></select>
+                <select id="staffMonthFilter"></select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>進場時間</th>
+                    <th>服務項目</th>
+                    <th>人數</th>
+                    <th>分鐘</th>
+                    <th>業績</th>
+                    <th>抽成試算</th>
+                  </tr>
+                </thead>
+                <tbody id="staffServiceRows"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>變更密碼</h3>
+            </div>
+            <form id="staffChangePasswordForm" class="user-form">
+              <label>新密碼
+                <input name="newPassword" type="password" placeholder="輸入新密碼" required />
+              </label>
+              <label>確認密碼
+                <input name="confirmPassword" type="password" placeholder="再輸入一次" required />
+              </label>
+              <button type="submit">更新密碼</button>
+              <p id="staffPasswordMsg" class="login-error"></p>
+            </form>
+          </section>
+        </section>
+
+        <section id="usersView" class="view">
+          <div class="page-title">
+            <p>Admin Settings</p>
+            <h2>管理員設定</h2>
+            <span>新增或刪除負責人、店長與櫃台登入帳號。</span>
+          </div>
+
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <h3>新增帳號</h3>
+                <p class="muted">新增後會出現在登入頁帳號清單。</p>
+              </div>
+            </div>
+            <form id="userForm" class="user-form">
+              <label>姓名
+                <input name="name" type="text" placeholder="例如 王店長" required />
+              </label>
+              <label>角色
+                <select name="roleType">
+                  <option value="owner">負責人</option>
+                  <option value="manager">店長</option>
+                  <option value="frontdesk">櫃台</option>
+                </select>
+              </label>
+              <label id="userStoreField">門店
+                <select name="storeId"></select>
+              </label>
+              <label>密碼
+                <input name="password" type="text" value="demo123" required />
+              </label>
+              <button type="submit">新增帳號</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>帳號清單</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>帳號</th><th>姓名</th><th>角色</th><th>門店</th><th>可看頁面</th><th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="userRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

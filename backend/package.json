@@ -1,0 +1,12 @@
+{
+  "name": "massage-pos-admin-demo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "npx serve .",
+    "build": "echo Static demo - no build step required"
+  },
+  "devDependencies": {
+    "serve": "^14.2.5"
+  }
+}

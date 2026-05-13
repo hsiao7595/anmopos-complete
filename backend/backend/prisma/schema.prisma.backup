@@ -1,0 +1,233 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Store {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  color     String   @default("#666666")
+  className String   @default("store-default")
+  status    String   @default("active")
+
+  rooms     Room[]
+  staff     Staff[]
+  services  ServiceItem[]
+  members   Member[]
+  sessions  ServiceSession[]
+  orders    Order[]
+  reports   DailyReport[]
+  accounts  Account[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id           String   @id @default(cuid())
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id])
+
+  username     String   @unique
+  password     String   // 應該使用 bcrypt 加密
+  employeeNo   String?
+  fullName     String?
+  role         String   @default("staff") // admin, manager, staff
+  status       String   @default("active") // active, inactive, locked
+  lastLogin    DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([storeId, username])
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+
+  number    String   // 房間號
+  status    String   @default("idle") // idle, serving, cleaning, maintenance
+  capacity  Int      @default(1)
+
+  sessions  ServiceSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([storeId, number])
+}
+
+model Staff {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+
+  name         String
+  phone        String?
+  employeeNo   String?
+  status       String   @default("queue") // queue, serving, break, leave, offduty
+  queuePosition Int     @default(0)
+
+  sessions  ServiceSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ServiceItem {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+
+  name      String
+  minutes   Int      @default(0)
+  amount    Int      @default(0)
+  group     String   @default("normal") // normal, combo
+
+  sessions  ServiceSession[]
+  orders    OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Member {
+  id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id])
+
+  name      String
+  phone     String?
+  balance   Int      @default(0) // 儲值金額
+
+  sessions  ServiceSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ServiceSession {
+  id                String   @id @default(cuid())
+  storeId           String
+  store             Store    @relation(fields: [storeId], references: [id])
+
+  roomId            String
+  room              Room     @relation(fields: [roomId], references: [id])
+
+  staffId           String
+  staff             Staff    @relation(fields: [staffId], references: [id])
+
+  memberId          String?
+  member            Member?  @relation(fields: [memberId], references: [id])
+
+  serviceItemId     String
+  serviceItem       ServiceItem @relation(fields: [serviceItemId], references: [id])
+
+  addOnServiceItemIds String? // JSON array of service item IDs
+
+  arrivalTime       DateTime
+  startTime         DateTime?
+  endTime           DateTime?
+  status            String   @default("pending") // pending, started, completed, cancelled
+
+  notes             String?
+
+  order             Order?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Order {
+  id                String   @id @default(cuid())
+  storeId           String
+  store             Store    @relation(fields: [storeId], references: [id])
+
+  orderNo           String   @unique // 訂單號
+
+  sessionId         String   @unique
+  session           ServiceSession @relation(fields: [sessionId], references: [id])
+
+  totalAmount       Int      @default(0)
+  discountAmount    Int      @default(0)
+  finalAmount       Int      @default(0)
+
+  paymentMethod     String   @default("cash") // cash, card, transfer, mobile
+  paymentStatus     String   @default("pending") // pending, paid, refunded
+
+  paidAt            DateTime?
+  items             OrderItem[]
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model OrderItem {
+  id                String   @id @default(cuid())
+  orderId           String
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  serviceItemId     String
+  serviceItem       ServiceItem @relation(fields: [serviceItemId], references: [id])
+
+  quantity          Int      @default(1)
+  amount            Int      @default(0)
+
+  createdAt         DateTime @default(now())
+}
+
+model GuestEntry {
+  id           String   @id @default(cuid())
+  storeId      String   // store-1 or store-2
+  date         String   // YYYY-MM-DD
+  arrivalTime  String   @default("") // HH:MM
+  people       Int      @default(1)
+  serviceType  String   @default("")
+  minutes      Int      @default(0)
+  master       String   @default("")
+  room         String   @default("")
+  checkoutTime String   @default("") // HH:MM
+  amount       Int      @default(0)
+  paymentMethod String  @default("cash")
+  note         String   @default("")
+  source       String   @default("manual") // manual | pos | photo
+  externalId   String?  @unique // pos-<orderId> to prevent duplicates
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model DailyReport {
+  id                String   @id @default(cuid())
+  storeId           String
+  store             Store    @relation(fields: [storeId], references: [id])
+
+  reportDate        DateTime
+
+  morningCustomers  Int      @default(0)
+  afternoonCustomers Int    @default(0)
+  eveningCustomers  Int      @default(0)
+  totalCustomers    Int      @default(0)
+
+  workingMasters    Int      @default(0)
+  idleMasters       Int      @default(0)
+  lostCustomers     Int      @default(0)
+
+  note              String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([storeId, reportDate])
+}
